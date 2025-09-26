@@ -1,0 +1,14 @@
+services:
+  node-homepage:
+    build:
+      context: .
+      network: host
+    container_name: node-homepage
+    restart: always
+    env_file: .env
+    network_mode: host
+    # ports:
+    #   - "Host_Port:8088"
+    volumes:
+      - ./app/static/icons:/app/static/icons:ro
+      - ./fulcrum_tail.log:/app/fulcrum_tail.log:ro
