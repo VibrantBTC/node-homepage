@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ cfg.app_title }}</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='bitcoin.png') }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</head>
+<body class="min-h-screen flex flex-col items-center p-6">
+  <!-- Modal for enlarged QR -->
+  <div id="qrModal">
+    <img id="qrModalImg" alt="QR">
+  </div>
+
+  <div class="page-wrap w-full max-w-5xl">
+    <!-- Header -->
+    <div class="flex items-center justify-center mb-6">
+      <img src="{{ url_for('static', filename='bitcoin.png') }}"
+           class="w-12 h-12 mr-2" alt="Logo">
+      <h1 class="text-2xl font-bold">{{ cfg.app_title }}</h1>
+    </div>
+
+    <!-- Bitcoin Core -->
+    <div class="card mb-6">
+      <div class="card-header">
+        <img src="{{ url_for('static', filename='icons/bitcoin.png') }}"
+             class="w-10 h-10" alt="Bitcoin">
+        <div class="flex flex-col">
+          <div class="flex items-center gap-2">
+            <span class="text-xl font-semibold">Bitcoin Core</span>
+            <span id="btc_dot" class="w-3 h-3 rounded-full inline-block bg-gray-400"></span>
+            <span id="btc_status" class="text-sm text-gray-300">Starting...</span>
+          </div>
+          <div class="text-sm">Version: <span id="btc_version">-</span></div>
+        </div>
+        <div class="ml-auto">
+          <button id="btc_arrow" class="arrow" onclick="toggleSection('btc_body','btc_arrow')">v</button>
+        </div>
+      </div>
+      <div id="btc_body" class="collapsible">
+        <div class="collapsible-inner">
+          <div class="mb-2 text-sm text-gray-300 flex justify-between">
+            <span>Sync</span>
+            <span id="btc_sync_text">-</span>
+          </div>
+          <div class="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+            <div id="btc_bar" class="h-2 rounded-full bg-gray-400" style="width: 0%"></div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+            <div class="tile">
+              <div class="text-gray-400 text-sm mb-1">Blockchain Size (GB)</div>
+              <div id="btc_disk" class="text-2xl font-bold">-</div>
+            </div>
+            <div class="tile">
+              <div class="text-gray-400 text-sm mb-1">Mempool Size (MB)</div>
+              <div id="btc_mempool" class="text-2xl font-bold">-</div>
+            </div>
+            <div class="tile">
+              <div class="text-gray-400 text-sm mb-1">Peers</div>
+              <div id="btc_peers" class="text-2xl font-bold break-anywhere">-</div>
+            </div>
+            <div class="tile sm:col-span-2 md:col-span-3">
+              <div class="text-gray-400 text-sm mb-1">Uptime</div>
+              <div id="btc_uptime" class="text-2xl font-bold">-</div>
+            </div>
+          </div>
+
+          <!-- P2P Tor endpoint full width -->
+          <div class="grid grid-cols-1 mt-6">
+            <div class="tile">
+              <div class="text-sm text-gray-400 mb-2">P2P Tor</div>
+              <div class="text-sm break-anywhere">
+                <span class="copyable break-anywhere" data-copy="{{ cfg.bitcoin.p2p_onion }}">{{ cfg.bitcoin.p2p_onion }}</span>
+                :
+                <span class="copyable" data-copy="{{ cfg.bitcoin.p2p_port }}">{{ cfg.bitcoin.p2p_port }}</span>
+              </div>
+              <div class="qr-box">
+                <img class="qr" src="/qr?text={{ cfg.bitcoin.p2p_onion }}:{{ cfg.bitcoin.p2p_port }}" alt="Bitcoin P2P QR">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fulcrum -->
+    <div class="card mb-6">
+      <div class="card-header">
+        <img src="{{ url_for('static', filename='icons/fulcrum.png') }}"
+             class="w-10 h-10" alt="Fulcrum">
+        <div class="flex flex-col">
+          <div class="flex items-center gap-2">
+            <span class="text-xl font-semibold">Fulcrum</span>
+            <span id="fl_dot" class="w-3 h-3 rounded-full inline-block bg-gray-400"></span>
+            <span id="fl_status" class="text-sm text-gray-300">Starting...</span>
+            <span id="fl_btc_badge"
+                  class="hidden text-xs px-2 py-0.5 rounded bg-red-700/60 text-red-200">
+              Bitcoin down
+            </span>
+          </div>
+          <div class="text-sm">Version: <span id="fl_version">-</span></div>
+        </div>
+        <div class="ml-auto">
+          <button id="fl_arrow" class="arrow" onclick="toggleSection('fl_body','fl_arrow')">v</button>
+        </div>
+      </div>
+      <div id="fl_body" class="collapsible">
+        <div class="collapsible-inner">
+
+          {% if cfg.fulcrum.stats_enabled %}
+            <div class="mb-2 text-sm text-gray-300 flex justify-between">
+              <span>Sync</span>
+              <span id="fl_sync_text">-</span>
+            </div>
+            <div class="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+              <div id="fl_bar" class="h-2 rounded-full bg-gray-400" style="width: 0%"></div>
+            </div>
+            <div id="fl_speeds" class="text-xs text-gray-400 mt-2 hidden"></div>
+          {% endif %}
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 items-stretch">
+            <div class="tile">
+              <div class="text-sm text-gray-400 mb-2">Local</div>
+              <div class="text-sm break-anywhere">
+                <span class="copyable" data-copy="{{ cfg.fulcrum.local_address }}">{{ cfg.fulcrum.local_address }}</span>
+              </div>
+              <div class="text-sm">
+                TCP: <span class="copyable" data-copy="{{ cfg.fulcrum.tcp_port }}">{{ cfg.fulcrum.tcp_port }}</span>
+              </div>
+              <div class="text-sm">
+                SSL: <span class="copyable" data-copy="{{ cfg.fulcrum.ssl_port }}">{{ cfg.fulcrum.ssl_port }}</span>
+              </div>
+              <div class="flex-1"></div>
+              <div class="qr-box">
+                <img class="qr" src="/qr?text={{ cfg.fulcrum.local_address }}:{{ cfg.fulcrum.ssl_port }}" alt="Fulcrum Local QR">
+              </div>
+            </div>
+
+            <div class="tile">
+              <div class="text-sm text-gray-400 mb-2">Tor (TCP)</div>
+              <div class="text-sm break-anywhere">
+                <span class="copyable break-anywhere" data-copy="{{ cfg.fulcrum.onion_tcp }}">{{ cfg.fulcrum.onion_tcp }}</span>
+                :
+                <span class="copyable" data-copy="{{ cfg.fulcrum.tcp_port }}">{{ cfg.fulcrum.tcp_port }}</span>
+              </div>
+              <div class="text-xs text-gray-400 mt-1">SSL: Disabled</div>
+              <div class="flex-1"></div>
+              <div class="qr-box">
+                <img class="qr" src="/qr?text={{ cfg.fulcrum.onion_tcp }}:{{ cfg.fulcrum.tcp_port }}" alt="Fulcrum Tor TCP QR">
+              </div>
+            </div>
+
+            <div class="tile">
+              <div class="text-sm text-gray-400 mb-2">Tor (SSL)</div>
+              <div class="text-sm break-anywhere">
+                <span class="copyable break-anywhere" data-copy="{{ cfg.fulcrum.onion_ssl }}">{{ cfg.fulcrum.onion_ssl }}</span>
+                :
+                <span class="copyable" data-copy="{{ cfg.fulcrum.ssl_port }}">{{ cfg.fulcrum.ssl_port }}</span>
+              </div>
+              <div class="text-xs text-gray-400 mt-1">SSL: Enabled</div>
+              <div class="flex-1"></div>
+              <div class="qr-box">
+                <img class="qr" src="/qr?text={{ cfg.fulcrum.onion_ssl }}:{{ cfg.fulcrum.ssl_port }}" alt="Fulcrum Tor SSL QR">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dojo -->
+    <div class="card mb-6">
+      <div class="card-header">
+        <img src="{{ url_for('static', filename='icons/dojo.png') }}"
+             class="w-10 h-10" alt="Dojo">
+        <span class="text-xl font-semibold">Samourai Dojo</span>
+        <div class="ml-auto">
+          <button id="dojo_arrow" class="arrow" onclick="toggleSection('dojo_body','dojo_arrow')">v</button>
+        </div>
+      </div>
+      <div id="dojo_body" class="collapsible">
+        <div class="collapsible-inner">
+          <div class="text-sm mb-2">Pairing JSON (click to copy)</div>
+          {% if cfg.dojo.valid %}
+            <textarea class="w-full p-2 rounded bg-[#222222] text-sm break-anywhere copyable"
+                      rows="6" readonly
+                      data-copy="{{ cfg.dojo.raw_final_pretty|e }}">{{ cfg.dojo.raw_final_pretty }}</textarea>
+            <div class="qr-box">
+              <img class="qr" src="/qr?text={{ cfg.dojo.raw_final_min|e }}" alt="Dojo QR">
+            </div>
+          {% else %}
+            <div class="text-red-400 text-sm">
+              Dojo pairing not configured. Set DOJO_RAW_JSON or the individual fields.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Mempool -->
+    <div class="card mb-6">
+      <div class="card-header">
+        <img src="{{ url_for('static', filename='icons/mempool.png') }}"
+             class="w-10 h-10" alt="Mempool">
+        <a href="{{ cfg.mempool.clearnet }}" class="text-xl font-semibold text-blue-400"
+           target="_blank" rel="noopener">Mempool</a>
+        <div class="ml-auto">
+          <button id="mempool_arrow" class="arrow" onclick="toggleSection('mempool_body','mempool_arrow')">v</button>
+        </div>
+      </div>
+      <div id="mempool_body" class="collapsible">
+        <div class="collapsible-inner">
+          <div class="grid grid-cols-1">
+            <div class="tile">
+              <div class="text-sm text-gray-400 mb-2">Tor</div>
+              <div class="text-sm break-anywhere">
+                <span class="copyable break-anywhere" data-copy="{{ cfg.mempool.onion }}">{{ cfg.mempool.onion }}</span>
+              </div>
+              <div class="qr-box">
+                <img class="qr" src="/qr?text={{ cfg.mempool.onion }}" alt="Mempool Tor QR">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Robosats -->
+    <div class="card mb-6">
+      <div class="card-header">
+        <img src="{{ url_for('static', filename='icons/robosats.png') }}"
+             class="w-10 h-10" alt="Robosats">
+        <a href="{{ cfg.robosats.clearnet }}" class="text-xl font-semibold text-blue-400"
+           target="_blank" rel="noopener">Robosats</a>
+        <div class="ml-auto">
+          <button id="robosats_arrow" class="arrow" onclick="toggleSection('robosats_body','robosats_arrow')">v</button>
+        </div>
+      </div>
+      <div id="robosats_body" class="collapsible">
+        <div class="collapsible-inner">
+          <div class="grid grid-cols-1">
+            <div class="tile">
+              <div class="text-sm text-gray-400 mb-2">Tor</div>
+              <div class="text-sm break-anywhere">
+                <span class="copyable break-anywhere" data-copy="{{ cfg.robosats.onion }}">{{ cfg.robosats.onion }}</span>
+              </div>
+              <div class="qr-box">
+                <img class="qr" src="/qr?text={{ cfg.robosats.onion }}" alt="Robosats Tor QR">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Monero -->
+    <div class="card mb-6">
+      <div class="card-header">
+        <img src="{{ url_for('static', filename='icons/monero.png') }}"
+             class="w-10 h-10" alt="Monero">
+        <span class="text-xl font-semibold">Monero Node</span>
+        <div class="ml-auto">
+          <button id="monero_arrow" class="arrow" onclick="toggleSection('monero_body','monero_arrow')">v</button>
+        </div>
+      </div>
+      <div id="monero_body" class="collapsible">
+        <div class="collapsible-inner">
+          <div class="grid grid-cols-1">
+            <div class="tile">
+              <div class="text-sm text-gray-400 mb-2">Tor</div>
+              <div class="text-sm break-anywhere">
+                <span class="copyable break-anywhere" data-copy="{{ cfg.monero.onion }}">{{ cfg.monero.onion }}</span>
+                :
+                <span class="copyable" data-copy="{{ cfg.monero.rpc_port }}">{{ cfg.monero.rpc_port }}</span>
+              </div>
+              <div class="qr-box">
+                <img class="qr" src="/qr?text={{ cfg.monero.onion }}:{{ cfg.monero.rpc_port }}" alt="Monero Tor QR">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="text-center text-xs text-gray-500 mt-6">
+      <a href="https://paynym.rs/+headymouth97" class="text-gray-400" target="_blank" rel="noopener">Donate</a>
+    </div>
+  </div>
+</body>
+</html>
