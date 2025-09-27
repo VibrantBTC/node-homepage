@@ -20,8 +20,19 @@ def ensure_v2_suffix(url: str) -> str:
         u = u + "/v2"
     return u
 
+def ensure_http(url: str) -> str:
+    """
+    If url has no scheme, prefix with 'http://'.
+    Used for onion addresses pasted without scheme.
+    """
+    if not url:
+        return ""
+    u = url.strip()
+    if u.startswith("http://") or u.startswith("https://"):
+        return u
+    return "http://" + u
+
 def canonical_dojo(version: str, apikey: str, pairing_url: str, explorer_url: str):
-    """Build the Dojo JSON in canonical field order."""
     return {
         "pairing": {
             "type": "dojo.api",
@@ -36,7 +47,6 @@ def canonical_dojo(version: str, apikey: str, pairing_url: str, explorer_url: st
     }
 
 def load_config():
-    # Prefer *_CLEARNET, fallback to *_LOCAL if present
     mempool_clearnet = first_nonempty(
         os.getenv("MEMPOOL_CLEARNET", ""),
         os.getenv("MEMPOOL_LOCAL", "")
@@ -67,11 +77,9 @@ def load_config():
             "onion_tcp": os.getenv("FULCRUM_ONION_TCP", ""),
             "onion_ssl": os.getenv("FULCRUM_ONION_SSL", ""),
             "use_ssl": getenv_bool("FULCRUM_USE_SSL", "false"),
-            # Logs-only stats
             "stats_enabled": getenv_bool("FULCRUM_STATS", "true"),
             "tail_path": os.getenv("FULCRUM_TAIL_PATH", "/app/fulcrum_tail.log").strip(),
             "tail_lines": int(os.getenv("FULCRUM_TAIL_LINES", "100")),
-            # Version shown in UI header
             "version": os.getenv("FULCRUM_VERSION", "").strip(),
         },
 
@@ -81,6 +89,8 @@ def load_config():
             "url": os.getenv("DOJO_URL", "").strip(),
             "version": os.getenv("DOJO_VERSION", "1.27.0").strip(),
             "explorer_url": os.getenv("EXPLORER_URL", "").strip(),
+            # Normalize maintenance URL to ensure http:// if missing
+            "maintenance_url": ensure_http(os.getenv("DOJO_MAINTENANCE_URL", "").strip()),
         },
 
         "mempool": {
@@ -102,23 +112,18 @@ def load_config():
     # Build/normalize Dojo JSON
     raw = cfg["dojo"]["raw_json"]
     if raw:
-        # Parse provided JSON and normalize into canonical form
         try:
             src = json.loads(raw)
         except Exception:
             src = {}
-
         pairing = src.get("pairing", {}) if isinstance(src.get("pairing"), dict) else {}
         explorer = src.get("explorer", {}) if isinstance(src.get("explorer"), dict) else {}
-
         version = cfg["dojo"]["version"] or pairing.get("version", "1.27.0")
         apikey = cfg["dojo"]["apikey"] or pairing.get("apikey", "")
         pairing_url = cfg["dojo"]["url"] or pairing.get("url", "")
         explorer_url = cfg["dojo"]["explorer_url"] or explorer.get("url", "")
-
         data = canonical_dojo(version, apikey, pairing_url, explorer_url)
     else:
-        # Construct from individual fields
         data = canonical_dojo(
             cfg["dojo"]["version"],
             cfg["dojo"]["apikey"],
@@ -131,7 +136,6 @@ def load_config():
     if mem_onion:
         data["explorer"]["url"] = f"http://{mem_onion}"
 
-    # Finalize raw JSON strings (minified for QR, pretty for UI copy)
     try:
         raw_min = json.dumps(data, separators=(",", ":"))
         raw_pretty = json.dumps(data, indent=4)
