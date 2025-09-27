@@ -23,7 +23,7 @@ body {
   padding: 16px;
 }
 
-/* Collapsible container with inner measured content (prevents bleed) */
+/* Collapsible */
 .collapsible {
   overflow: hidden;
   max-height: 0;
@@ -33,7 +33,7 @@ body {
   padding: 16px;
 }
 
-/* Arrow button */
+/* Arrow */
 .arrow {
   display: inline-flex;
   align-items: center;
@@ -46,12 +46,8 @@ body {
   transition: transform 250ms ease, background 180ms ease;
   user-select: none;
 }
-.arrow:hover {
-  background: #333333;
-}
-.arrow.rotated {
-  transform: rotate(180deg);
-}
+.arrow:hover { background: #333333; }
+.arrow.rotated { transform: rotate(180deg); }
 
 /* Tiles */
 .tile {
@@ -63,7 +59,7 @@ body {
   text-align: center;
 }
 
-/* Copyable text */
+/* Copyable */
 .copyable {
   cursor: pointer;
   padding: 2px 6px;
@@ -78,9 +74,7 @@ body {
   background: #2b2b2b;
   color: #ffffff;
 }
-.copyable.copied {
-  color: #86efac; /* green when copied */
-}
+.copyable.copied { color: #86efac; }
 
 /* Prevent overflow of long onions */
 .break-anywhere {
@@ -88,7 +82,7 @@ body {
   word-break: break-word;
 }
 
-/* QR wrapper */
+/* QR */
 .qr-box {
   display: flex;
   align-items: center;
@@ -101,13 +95,13 @@ body {
   object-fit: contain;
 }
 
-/* Page wrapper blur when modal open */
+/* Blur on QR modal open */
 .page-wrap.blurred {
   filter: blur(2px) brightness(0.9);
   transition: filter 200ms ease;
 }
 
-/* QR Modal overlay */
+/* QR Modal */
 #qrModal {
   position: fixed;
   inset: 0;
@@ -118,9 +112,7 @@ body {
   z-index: 50;
   backdrop-filter: blur(2px);
 }
-#qrModal.show {
-  display: flex;
-}
+#qrModal.show { display: flex; }
 #qrModal img {
   max-width: 80vw;
   max-height: 80vh;
@@ -129,6 +121,38 @@ body {
   transform: scale(0.96);
   transition: transform 200ms ease;
 }
-#qrModal.show img {
-  transform: scale(1);
+#qrModal.show img { transform: scale(1); }
+
+/* JSON block: full-width, native look, centers content on wide screens */
+.json-block {
+  width: 100%;
+  background: #222222;
+  border-radius: 12px;
+  padding: 12px;
+}
+.json-pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  font-size: 0.88rem;
+  line-height: 1.4rem;
+  color: #e5e7eb;
+  /* Center the content within the full-width block on desktop */
+  max-width: 90ch;           /* limit line-length for readability */
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
+}
+/* On mobile, let it use full width and slightly smaller text */
+@media (max-width: 640px) {
+  .json-pre {
+    max-width: 100%;
+    font-size: 0.80rem;
+    line-height: 1.3rem;
+  }
+}
+/* Copy feedback: turn the JSON text itself green briefly */
+.copyable.copied .json-pre {
+  color: #86efac;
 }
