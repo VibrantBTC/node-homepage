@@ -177,18 +177,30 @@
       <div class="card-header">
         <img src="{{ url_for('static', filename='icons/dojo.png') }}"
              class="w-10 h-10" alt="Dojo">
-        <span class="text-xl font-semibold">Samourai Dojo</span>
+
+        {% if cfg.dojo.maintenance_url %}
+          <a href="{{ cfg.dojo.maintenance_url }}" class="text-xl font-semibold text-blue-400"
+             target="_blank" rel="noopener">Samourai Dojo</a>
+        {% else %}
+          <span class="text-xl font-semibold">Samourai Dojo</span>
+        {% endif %}
+
         <div class="ml-auto">
           <button id="dojo_arrow" class="arrow" onclick="toggleSection('dojo_body','dojo_arrow')">v</button>
         </div>
       </div>
+
       <div id="dojo_body" class="collapsible">
         <div class="collapsible-inner">
-          <div class="text-sm mb-2">Pairing JSON (click to copy)</div>
           {% if cfg.dojo.valid %}
-            <textarea class="w-full p-2 rounded bg-[#222222] text-sm break-anywhere copyable"
-                      rows="6" readonly
-                      data-copy="{{ cfg.dojo.raw_final_pretty|e }}">{{ cfg.dojo.raw_final_pretty }}</textarea>
+            <div class="text-sm text-gray-400 mb-2">Pairing JSON (tap to copy)</div>
+
+            <!-- Full-width, native JSON block; centers content on wide screens;
+                 clicking briefly turns the JSON text green (copy feedback). -->
+            <div class="json-block copyable" data-copy="{{ cfg.dojo.raw_final_pretty|e }}">
+              <pre class="json-pre">{{ cfg.dojo.raw_final_pretty }}</pre>
+            </div>
+
             <div class="qr-box">
               <img class="qr" src="/qr?text={{ cfg.dojo.raw_final_min|e }}" alt="Dojo QR">
             </div>
